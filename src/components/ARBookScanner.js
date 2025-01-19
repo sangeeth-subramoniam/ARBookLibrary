@@ -121,7 +121,7 @@ const ARBookScanner = () => {
 
     try {
       // Step 1: Store the cropped image
-      const saveResponse = await fetch("http://localhost:5000/store-capture", {
+      const saveResponse = await fetch("https://sicgaiken2.pythonanywhere.com/store-capture", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -133,7 +133,7 @@ const ARBookScanner = () => {
       const { filePath } = saveResult;
 
       // Step 2: Fetch results from backend
-      const fetchResponse = await fetch("http://localhost:5000/fetch-results", {
+      const fetchResponse = await fetch("https://sicgaiken2.pythonanywhere.com/fetch-results", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
