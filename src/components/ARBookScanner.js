@@ -129,6 +129,12 @@ const ARBookScanner = () => {
         body: JSON.stringify({ image: croppedImage }),
       });
 
+      if (!saveResponse.ok) {
+        const saveError = await saveResponse.json();
+        console.error("Error storing capture:", saveError);
+        return;
+      }
+
       const saveResult = await saveResponse.json();
       const { filePath } = saveResult;
 
@@ -140,6 +146,12 @@ const ARBookScanner = () => {
         },
         body: JSON.stringify({ filePath }),
       });
+
+      if (!fetchResponse.ok) {
+        const fetchError = await fetchResponse.json();
+        console.error("Error fetching results:", fetchError);
+        return;
+      }
 
       const fetchResult = await fetchResponse.json();
 
@@ -204,27 +216,23 @@ const ARBookScanner = () => {
         {results ? (
           <>
             <p>
-              <strong>Extracted Text:</strong> {results.extractedText}
+              <strong>Extracted Text:</strong> {results.extractedText || "N/A"}
             </p>
-            <h4>Database Results:</h4>
-            {results.dbResults.map((result, index) => (
-              <div key={index}>
-                <p>
-                  <strong>{result.title}</strong> - {result.content}
-                </p>
-              </div>
-            ))}
             <h4>Google Books Results:</h4>
-            {results.googleBooksResults.map((book, index) => (
-              <div key={index}>
-                <p>
-                  <strong>{book.title}</strong> - {book.authors.join(", ")}
-                </p>
-                <a href={book.infoLink} target="_blank" rel="noopener noreferrer">
-                  View on Google Books
-                </a>
-              </div>
-            ))}
+            {results.googleBooksResults && results.googleBooksResults.length > 0 ? (
+              results.googleBooksResults.map((book, index) => (
+                <div key={index}>
+                  <p>
+                    <strong>{book.title}</strong> - {book.authors.join(", ")}
+                  </p>
+                  <a href={book.infoLink} target="_blank" rel="noopener noreferrer">
+                    View on Google Books
+                  </a>
+                </div>
+              ))
+            ) : (
+              <p>No Google Books results found.</p>
+            )}
           </>
         ) : (
           <p>Click on a book to process.</p>
