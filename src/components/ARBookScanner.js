@@ -2,8 +2,8 @@ import React, { useRef, useEffect, useState } from "react";
 import Webcam from "react-webcam";
 import * as cocoSsd from "@tensorflow-models/coco-ssd";
 import * as tf from "@tensorflow/tfjs";
-import "@tensorflow/tfjs-backend-webgl"; // WebGL backend
-import "@tensorflow/tfjs-backend-cpu"; // CPU backend fallback
+import "@tensorflow/tfjs-backend-webgl";
+import "@tensorflow/tfjs-backend-cpu";
 
 const ARBookScanner = () => {
   const webcamRef = useRef(null);
@@ -11,15 +11,16 @@ const ARBookScanner = () => {
 
   const [bookBBox, setBookBBox] = useState(null);
   const [results, setResults] = useState(null);
+  const [isResultsMinimized, setIsResultsMinimized] = useState(false); // Minimize/Maximize state
 
   useEffect(() => {
     const initializeTensorFlow = async () => {
       try {
-        await tf.setBackend("webgl"); // Try WebGL backend
+        await tf.setBackend("webgl");
         console.log("WebGL backend initialized.");
       } catch (error) {
         console.warn("WebGL not available. Falling back to CPU backend.");
-        await tf.setBackend("cpu"); // Fallback to CPU
+        await tf.setBackend("cpu");
       }
 
       await tf.ready();
@@ -120,7 +121,6 @@ const ARBookScanner = () => {
     const croppedImage = tempCanvas.toDataURL("image/jpeg");
 
     try {
-      // Step 1: Store the cropped image
       const saveResponse = await fetch("https://sicgaiken2.pythonanywhere.com/store-capture", {
         method: "POST",
         headers: {
@@ -138,7 +138,6 @@ const ARBookScanner = () => {
       const saveResult = await saveResponse.json();
       const { filePath } = saveResult;
 
-      // Step 2: Fetch results from backend
       const fetchResponse = await fetch("https://sicgaiken2.pythonanywhere.com/fetch-results", {
         method: "POST",
         headers: {
@@ -159,6 +158,10 @@ const ARBookScanner = () => {
     } catch (error) {
       console.error("Error processing book:", error);
     }
+  };
+
+  const toggleResults = () => {
+    setIsResultsMinimized(!isResultsMinimized);
   };
 
   return (
@@ -202,19 +205,33 @@ const ARBookScanner = () => {
       <div
         style={{
           position: "absolute",
-          bottom: "20px",
-          right: "20px",
-          width: "300px",
+          bottom: 0,
+          left: 0,
+          width: "100%",
           backgroundColor: "rgba(0, 0, 0, 0.8)",
           color: "#fff",
-          padding: "15px",
-          borderRadius: "10px",
+          maxHeight: isResultsMinimized ? "40px" : "50%",
+          overflowY: isResultsMinimized ? "hidden" : "auto",
+          transition: "max-height 0.3s ease-in-out",
           zIndex: 3,
+          borderTopLeftRadius: "15px",
+          borderTopRightRadius: "15px",
         }}
       >
-        <h3>Results</h3>
-        {results ? (
-          <>
+        <div
+          style={{
+            textAlign: "center",
+            cursor: "pointer",
+            padding: "5px",
+            borderBottom: isResultsMinimized ? "none" : "1px solid #fff",
+          }}
+          onClick={toggleResults}
+        >
+          {isResultsMinimized ? "↑ Expand Results" : "↓ Minimize Results"}
+        </div>
+
+        {!isResultsMinimized && results && (
+          <div style={{ padding: "10px" }}>
             <p>
               <strong>Extracted Text:</strong> {results.extractedText || "N/A"}
             </p>
@@ -225,7 +242,12 @@ const ARBookScanner = () => {
                   <p>
                     <strong>{book.title}</strong> - {book.authors.join(", ")}
                   </p>
-                  <a href={book.infoLink} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={book.infoLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#00f" }}
+                  >
                     View on Google Books
                   </a>
                 </div>
@@ -233,9 +255,7 @@ const ARBookScanner = () => {
             ) : (
               <p>No Google Books results found.</p>
             )}
-          </>
-        ) : (
-          <p>Click on a book to process.</p>
+          </div>
         )}
       </div>
     </div>
