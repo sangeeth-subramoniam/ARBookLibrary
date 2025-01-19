@@ -11,7 +11,8 @@ const ARBookScanner = () => {
 
   const [bookBBox, setBookBBox] = useState(null);
   const [results, setResults] = useState(null);
-  const [isResultsMinimized, setIsResultsMinimized] = useState(false); // Minimize/Maximize state
+  const [isResultsMinimized, setIsResultsMinimized] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Loading state
 
   useEffect(() => {
     const initializeTensorFlow = async () => {
@@ -90,11 +91,14 @@ const ARBookScanner = () => {
   const handleScreenClick = async () => {
     if (!bookBBox) {
       console.log("No book detected to process.");
+      alert('本を見つかりませんでした！')
       return;
     }
 
+    setIsLoading(true); // Show loading spinner
     const [x, y, width, height] = bookBBox;
     await processBook(x, y, width, height);
+    setIsLoading(false); // Hide loading spinner
   };
 
   const processBook = async (x, y, width, height) => {
@@ -155,13 +159,15 @@ const ARBookScanner = () => {
       const fetchResult = await fetchResponse.json();
 
       setResults(fetchResult);
+      setIsResultsMinimized(false); // Auto-expand results box
     } catch (error) {
       console.error("Error processing book:", error);
     }
   };
 
-  const toggleResults = () => {
-    setIsResultsMinimized(!isResultsMinimized);
+  const toggleResults = (event, minimize) => {
+    event.stopPropagation(); // Prevent triggering handleScreenClick
+    setIsResultsMinimized(minimize);
   };
 
   return (
@@ -202,6 +208,26 @@ const ARBookScanner = () => {
         }}
       />
 
+      {/* Loading Spinner */}
+      {isLoading && (
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            color: "#fff",
+            padding: "20px",
+            borderRadius: "10px",
+            zIndex: 4,
+          }}
+        >
+          <p>Loading...</p>
+        </div>
+      )}
+
+      {/* Results Section */}
       <div
         style={{
           position: "absolute",
@@ -221,13 +247,41 @@ const ARBookScanner = () => {
         <div
           style={{
             textAlign: "center",
-            cursor: "pointer",
-            padding: "5px",
+            padding: "10px",
             borderBottom: isResultsMinimized ? "none" : "1px solid #fff",
+            display: "flex",
+            justifyContent: "right",
+            alignItems: "center",
+            gap: "10px",
           }}
-          onClick={toggleResults}
         >
-          {isResultsMinimized ? "↑ Expand Results" : "↓ Minimize Results"}
+          {/* Minimize and Expand Buttons */}
+          <button
+            style={{
+              padding: "5px 10px",
+              backgroundColor: "#00f",
+              color: "#fff",
+              border: "none",
+              borderRadius: "5px",
+              cursor: "pointer",
+            }}
+            onClick={(event) => toggleResults(event, true)} // Minimize Results
+          >
+            ー
+          </button>
+          <button
+            style={{
+              padding: "5px 10px",
+              backgroundColor: "#00f",
+              color: "#fff",
+              border: "none",
+              borderRadius: "5px",
+              cursor: "pointer",
+            }}
+            onClick={(event) => toggleResults(event, false)} // Expand Results
+          >
+            &#x1F5D6;
+          </button>
         </div>
 
         {!isResultsMinimized && results && (
