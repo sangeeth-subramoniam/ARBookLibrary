@@ -13,6 +13,7 @@ const ARBookScanner = () => {
   const [results, setResults] = useState(null);
   const [isResultsMinimized, setIsResultsMinimized] = useState(false);
   const [isLoading, setIsLoading] = useState(false); // Loading state
+  const [popupMessage, setPopupMessage] = useState(""); // Popup message state
 
   useEffect(() => {
     const initializeTensorFlow = async () => {
@@ -91,7 +92,7 @@ const ARBookScanner = () => {
   const handleScreenClick = async () => {
     if (!bookBBox) {
       console.log("No book detected to process.");
-      alert('本を見つかりませんでした！')
+      showPopupMessage("No book detected!"); // Show popup message
       return;
     }
 
@@ -170,6 +171,13 @@ const ARBookScanner = () => {
     setIsResultsMinimized(minimize);
   };
 
+  const showPopupMessage = (message) => {
+    setPopupMessage(message);
+    setTimeout(() => {
+      setPopupMessage(""); // Clear the message after 1 second
+    }, 1000);
+  };
+
   return (
     <div
       style={{
@@ -207,6 +215,25 @@ const ARBookScanner = () => {
           zIndex: 2,
         }}
       />
+
+      {/* Popup Message */}
+      {popupMessage && (
+        <div
+          style={{
+            position: "absolute",
+            top: "10%",
+            left: "50%",
+            transform: "translate(-50%, 0)",
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            color: "#fff",
+            padding: "10px 20px",
+            borderRadius: "5px",
+            zIndex: 5,
+          }}
+        >
+          {popupMessage}
+        </div>
+      )}
 
       {/* Loading Spinner */}
       {isLoading && (
@@ -250,7 +277,7 @@ const ARBookScanner = () => {
             padding: "10px",
             borderBottom: isResultsMinimized ? "none" : "1px solid #fff",
             display: "flex",
-            justifyContent: "right",
+            justifyContent: "center",
             alignItems: "center",
             gap: "10px",
           }}
@@ -267,7 +294,7 @@ const ARBookScanner = () => {
             }}
             onClick={(event) => toggleResults(event, true)} // Minimize Results
           >
-            ー
+            Minimize
           </button>
           <button
             style={{
@@ -280,7 +307,7 @@ const ARBookScanner = () => {
             }}
             onClick={(event) => toggleResults(event, false)} // Expand Results
           >
-            &#x1F5D6;
+            Expand
           </button>
         </div>
 
