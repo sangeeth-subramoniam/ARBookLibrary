@@ -92,7 +92,7 @@ const ARBookScanner = () => {
   const handleScreenClick = async () => {
     if (!bookBBox) {
       console.log("No book detected to process.");
-      showPopupMessage("No book detected!"); // Show popup message
+      showPopupMessage("本を見つかりませんでした！"); // Show popup message
       return;
     }
 
@@ -277,7 +277,7 @@ const ARBookScanner = () => {
             padding: "10px",
             borderBottom: isResultsMinimized ? "none" : "1px solid #fff",
             display: "flex",
-            justifyContent: "center",
+            justifyContent: "right",
             alignItems: "center",
             gap: "10px",
           }}
@@ -294,7 +294,7 @@ const ARBookScanner = () => {
             }}
             onClick={(event) => toggleResults(event, true)} // Minimize Results
           >
-            Minimize
+            ー
           </button>
           <button
             style={{
@@ -307,16 +307,16 @@ const ARBookScanner = () => {
             }}
             onClick={(event) => toggleResults(event, false)} // Expand Results
           >
-            Expand
+            ^
           </button>
         </div>
 
         {!isResultsMinimized && results && (
           <div style={{ padding: "10px" }}>
             <p>
-              <strong>Extracted Text:</strong> {results.extractedText || "N/A"}
+              <strong>テキスト:</strong> {results.extractedText || "N/A"}
             </p>
-            <h4>Google Books Results:</h4>
+            <h4>GOOGLE BOOK 結果:</h4>
             {results.googleBooksResults && results.googleBooksResults.length > 0 ? (
               results.googleBooksResults.map((book, index) => (
                 <div key={index}>
@@ -329,12 +329,12 @@ const ARBookScanner = () => {
                     rel="noopener noreferrer"
                     style={{ color: "#00f" }}
                   >
-                    View on Google Books
+                    GOOGLE BOOK へ
                   </a>
                 </div>
               ))
             ) : (
-              <p>No Google Books results found.</p>
+              <p>GOOGLE BOOKS 結果ありませんでした</p>
             )}
           </div>
         )}
