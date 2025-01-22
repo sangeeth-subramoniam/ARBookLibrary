@@ -12,19 +12,18 @@ const ARBookScanner = () => {
   const [bookBBox, setBookBBox] = useState(null);
   const [results, setResults] = useState(null);
   const [isResultsMinimized, setIsResultsMinimized] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // Loading state
-  const [popupMessage, setPopupMessage] = useState(""); // Popup message state
+  const [isLoading, setIsLoading] = useState(false);
+  const [popupMessage, setPopupMessage] = useState("");
 
   useEffect(() => {
     const initializeTensorFlow = async () => {
       try {
         await tf.setBackend("webgl");
         console.log("WebGL backend initialized.");
-      } catch (error) {
+      } catch {
         console.warn("WebGL not available. Falling back to CPU backend.");
         await tf.setBackend("cpu");
       }
-
       await tf.ready();
       console.log("TensorFlow.js backend is ready.");
 
@@ -43,11 +42,17 @@ const ARBookScanner = () => {
           drawBoundingBoxes(predictions);
 
           const bookPrediction = predictions.find(
-            (prediction) => prediction.class === "book"
+            (prediction) =>
+              prediction.class === "book" && prediction.score >= 0.8
           );
 
           if (bookPrediction) {
+            setIsLoading(true);
             setBookBBox(bookPrediction.bbox);
+            console.log("Triggering process automatically for detected book.");
+            const [x, y, width, height] = bookPrediction.bbox;
+            await processBook(x, y, width, height); // Automatically process
+            setIsLoading(false);
           } else {
             setBookBBox(null);
           }
@@ -89,17 +94,14 @@ const ARBookScanner = () => {
     });
   };
 
-  const handleScreenClick = async () => {
-    if (!bookBBox) {
-      console.log("No book detected to process.");
-      showPopupMessage("本を見つかりませんでした！"); // Show popup message
-      return;
-    }
-
-    setIsLoading(true); // Show loading spinner
-    const [x, y, width, height] = bookBBox;
-    await processBook(x, y, width, height);
-    setIsLoading(false); // Hide loading spinner
+  const handleManualCapture = async () => {
+    setIsLoading(true);
+    console.log("Manual capture triggered. Capturing full screen.");
+    const video = webcamRef.current.video;
+    const fullWidth = video.videoWidth;
+    const fullHeight = video.videoHeight;
+    await processBook(0, 0, fullWidth, fullHeight); // Capture the whole screen
+    setIsLoading(false);
   };
 
   const processBook = async (x, y, width, height) => {
@@ -158,36 +160,33 @@ const ARBookScanner = () => {
       }
 
       const fetchResult = await fetchResponse.json();
-
-      setResults(fetchResult);
-      setIsResultsMinimized(false); // Auto-expand results box
+      
+      // Handle "nothing" from backend
+      if (fetchResult.extractedText === "nothing") {
+        setResults({ extractedText: "No book found with no results" });
+      } else {
+        setResults(fetchResult);
+      }
+      setIsResultsMinimized(false);
     } catch (error) {
       console.error("Error processing book:", error);
     }
   };
 
   const toggleResults = (event, minimize) => {
-    event.stopPropagation(); // Prevent triggering handleScreenClick
+    event.stopPropagation();
     setIsResultsMinimized(minimize);
   };
 
   const showPopupMessage = (message) => {
     setPopupMessage(message);
     setTimeout(() => {
-      setPopupMessage(""); // Clear the message after 1 second
-    }, 1000);
+      setPopupMessage("");
+    }, 3000);
   };
 
   return (
-    <div
-      style={{
-        position: "relative",
-        height: "100vh",
-        width: "100vw",
-        cursor: "pointer",
-      }}
-      onClick={handleScreenClick}
-    >
+    <div style={{ position: "relative", height: "100vh", width: "100vw" }}>
       <Webcam
         ref={webcamRef}
         muted
@@ -216,26 +215,6 @@ const ARBookScanner = () => {
         }}
       />
 
-      {/* Popup Message */}
-      {popupMessage && (
-        <div
-          style={{
-            position: "absolute",
-            top: "10%",
-            left: "50%",
-            transform: "translate(-50%, 0)",
-            backgroundColor: "rgba(0, 0, 0, 0.8)",
-            color: "#fff",
-            padding: "10px 20px",
-            borderRadius: "5px",
-            zIndex: 5,
-          }}
-        >
-          {popupMessage}
-        </div>
-      )}
-
-      {/* Loading Spinner */}
       {isLoading && (
         <div
           style={{
@@ -247,12 +226,47 @@ const ARBookScanner = () => {
             color: "#fff",
             padding: "20px",
             borderRadius: "10px",
-            zIndex: 4,
+            textAlign: "center",
+            zIndex: 5,
           }}
         >
           <p>Loading...</p>
         </div>
       )}
+
+      {popupMessage && (
+        <div
+          style={{
+            position: "absolute",
+            top: "10%",
+            left: "10%",
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            color: "#fff",
+            padding: "10px 20px",
+            borderRadius: "5px",
+            zIndex: 5,
+          }}
+        >
+          {popupMessage}
+        </div>
+      )}
+
+      <button
+        onClick={() => showPopupMessage("自動的に本を検出します。手動撮影して本の写真をクリックしてください")}
+        style={{
+          position: "absolute",
+          top: "10px",
+          left: "10px",
+          zIndex: 6,
+          backgroundColor: "#fff",
+          border: "1px solid #ccc",
+          borderRadius: "5px",
+          padding: "10px",
+          cursor: "pointer",
+        }}
+      >
+        ( i )
+      </button>
 
       {/* Results Section */}
       <div
@@ -273,50 +287,67 @@ const ARBookScanner = () => {
       >
         <div
           style={{
-            textAlign: "center",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
             padding: "10px",
             borderBottom: isResultsMinimized ? "none" : "1px solid #fff",
-            display: "flex",
-            justifyContent: "right",
-            alignItems: "center",
-            gap: "10px",
           }}
         >
-          {/* Minimize and Expand Buttons */}
-          <button
-            style={{
-              padding: "5px 10px",
-              backgroundColor: "#00f",
-              color: "#fff",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-            }}
-            onClick={(event) => toggleResults(event, true)} // Minimize Results
-          >
-            ー
-          </button>
-          <button
-            style={{
-              padding: "5px 10px",
-              backgroundColor: "#00f",
-              color: "#fff",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-            }}
-            onClick={(event) => toggleResults(event, false)} // Expand Results
-          >
-            ^
-          </button>
+          {/* Center-aligned Manual Capture button */}
+          <div style={{ flex: 1, textAlign: "center" }}>
+            <button
+              onClick={handleManualCapture}
+              style={{
+                backgroundColor: "#fff",
+                color: "#00f",
+                border: "none",
+                borderRadius: "5px",
+                padding: "10px 20px",
+                cursor: "pointer",
+              }}
+            >
+              手動撮影
+            </button>
+          </div>
+
+          {/* Right-aligned Minimize and Expand buttons */}
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              style={{
+                backgroundColor: "#fff",
+                color: "#00f",
+                border: "none",
+                borderRadius: "5px",
+                padding: "5px 10px",
+                cursor: "pointer",
+              }}
+              onClick={(event) => toggleResults(event, true)}
+            >
+              ー
+            </button>
+            <button
+              style={{
+                backgroundColor: "#fff",
+                color: "#00f",
+                border: "none",
+                borderRadius: "5px",
+                padding: "5px 10px",
+                cursor: "pointer",
+              }}
+              onClick={(event) => toggleResults(event, false)}
+            >
+              ➚
+            </button>
+          </div>
         </div>
 
         {!isResultsMinimized && results && (
           <div style={{ padding: "10px" }}>
             <p>
-              <strong>テキスト:</strong> {results.extractedText || "N/A"}
+              <strong>テキスト：</strong> {results.extractedText || "N/A"}
             </p>
-            <h4>GOOGLE BOOK 結果:</h4>
+            <h4>Google Books 結果:</h4>
             {results.googleBooksResults && results.googleBooksResults.length > 0 ? (
               results.googleBooksResults.map((book, index) => (
                 <div key={index}>
@@ -329,12 +360,12 @@ const ARBookScanner = () => {
                     rel="noopener noreferrer"
                     style={{ color: "#00f" }}
                   >
-                    GOOGLE BOOK へ
+                    GOOGLE Booksへ
                   </a>
                 </div>
               ))
             ) : (
-              <p>GOOGLE BOOKS 結果ありませんでした</p>
+              <p>No results found on Google Books.</p>
             )}
           </div>
         )}
