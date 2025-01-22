@@ -48,6 +48,7 @@ const ARBookScanner = () => {
 
           if (bookPrediction) {
             setIsLoading(true);
+            console.log("Book bounding box:", bookPrediction.bbox);
             setBookBBox(bookPrediction.bbox);
             console.log("Triggering process automatically for detected book.");
             const [x, y, width, height] = bookPrediction.bbox;
