@@ -164,7 +164,7 @@ const ARBookScanner = () => {
       
       // Handle "nothing" from backend
       if (fetchResult.extractedText === "no book found") {
-        setResults({ extractedText: "なし" });
+        setResults({ extractedText: "一致する本はありません" });
       } else {
         setResults(fetchResult);
       }
@@ -366,7 +366,7 @@ const ARBookScanner = () => {
                 </div>
               ))
             ) : (
-              <p>No results found on Google Books.</p>
+              <p>一致する本はありません</p>
             )}
           </div>
         )}
