@@ -163,8 +163,8 @@ const ARBookScanner = () => {
       const fetchResult = await fetchResponse.json();
       
       // Handle "nothing" from backend
-      if (fetchResult.extractedText === "nothing") {
-        setResults({ extractedText: "No book found with no results" });
+      if (fetchResult.extractedText === "no book found") {
+        setResults({ extractedText: "なし" });
       } else {
         setResults(fetchResult);
       }
