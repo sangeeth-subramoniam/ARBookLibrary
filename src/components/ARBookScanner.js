@@ -5,6 +5,8 @@ import * as tf from "@tensorflow/tfjs";
 import "@tensorflow/tfjs-backend-webgl";
 import "@tensorflow/tfjs-backend-cpu";
 
+import '../App.css';
+
 const ARBookScanner = () => {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
@@ -344,26 +346,49 @@ const ARBookScanner = () => {
         </div>
 
         {!isResultsMinimized && results && (
-          <div style={{ padding: "10px" }}>
-            <p>
+          <div className="book_result_div" style={{ padding: "10px" }}>
+            <p className="book_result_extracted_text">
               <strong>テキスト：</strong> {results.extractedText || "N/A"}
             </p>
-            <h4>Google Books 結果:</h4>
+            <h4 className="book_result_div_title">Google Books 結果:</h4>
             {results.googleBooksResults && results.googleBooksResults.length > 0 ? (
               results.googleBooksResults.map((book, index) => (
-                <div key={index}>
-                  <p>
-                    <strong>{book.title}</strong> - {book.authors.join(", ")}
-                  </p>
+                <div className="book_result_div_each_book" key={index}>
+                  
                   <a
                     href={book.infoLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ color: "#00f" }}
+                    style={{ textDecoration: "none" , color:"black" }}
                   >
-                    GOOGLE Booksへ
+
+                    <div className="book_title_container">
+
+                      <div className="book_title_container_book_icon">📘</div>
+
+                      <div className="book_title_container_book_title_content"> 
+                      
+                        <p className="book_title_container_title"> <strong>{book.title}</strong> </p> 
+                        <p className="book_title_container_author">  {book.authors.join(", ")} </p>
+                        <p className="book_title_container_publisher"> {book.publisher}</p> 
+                        <p className="book_title_container_published_date">  {book.publishedDate} </p>
+                        
+
+                      </div>
+
+                    </div>
+
+                    <div className="book_summary_container">
+
+                      <p className="book_summary_container_title"> <strong>概要：</strong> </p> 
+                      
+                      <p className="book_summary_container_text">  {book.description} </p>
+
+                    </div>
+                    
                   </a>
                 </div>
+                
               ))
             ) : (
               <p>一致する本はありません</p>
